@@ -30,12 +30,14 @@ const [_, instructions] = readFileSync('input/day05.txt', 'utf8').split('\n\n');
 const instructionRegex = new RegExp(/move\s(?<amount>\d{1,2})\sfrom\s(?<source>\d)\sto\s(?<dest>\d)/gm);
 
 const partOne = (crates, instructions) => {
-    const [amount, source, dest] = instructions.match(/move\s(?<amount>\d{1,2})\sfrom\s(?<source>\d)\sto\s(?<dest>\d)/gm)
-        .map(instruction => instruction.match(/(?<amount>\d{1,2})|(?<source>\d)|(?<dest>\d)/gm));
+    instructions.match(/move\s(?<amount>\d{1,2})\sfrom\s(?<source>\d)\sto\s(?<dest>\d)/gm)
+        .map(instruction => instruction.match(/(?<amount>\d{1,2})|(?<source>\d)|(?<dest>\d)/gm))
+        .forEach(([amount, source, dest]) => {
+        for (let i = 0; i < amount; i++) {
+            crates[dest].push(crates[source].pop());
+        }
 
-    for (let i = 0, n = amount; i < n; i++) {
-        crates[dest].push(crates[source].pop());
-    };
+    });
 
     // get top crates
     return Object.values(crates).map(crate => crate[crate.length - 1]).join('');
@@ -56,5 +58,5 @@ const partTwo = (crates, instructions) => {
 
 
 
-//console.log(partOne(cratesInput, instructions));
-console.log(partTwo(cratesInput, instructions));
+console.log(partOne(cratesInput, instructions));
+//console.log(partTwo(cratesInput, instructions));
