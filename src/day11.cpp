@@ -4,12 +4,12 @@
 #include <regex>
 #include <fstream>
 #include <optional>
-
+#include <tuple>
 
 std::vector<std::string> split_string(const std::string& str,
                                       const std::string& delimiter);
-void part1(std::vector<std::string> lines, std::vector<std::pair<int, int>> bitch_ass_monkes);
-void part2(std::vector<std::string> lines, std::vector<std::pair<int, int>> bitch_ass_monkes);
+long long part1(std::vector<std::string> lines);
+void part2(std::vector<std::string> lines);
 enum Meth {
     ADD = '+',
     MULTIPLY = '*',
@@ -17,28 +17,33 @@ enum Meth {
 };
 
 
+const int GAME_ROUNDS = 20;
+
+
 class Monke {
     public: 
-        Monke(int multiplier, int divisible, std::queue<int> items, Meth meth, std::tuple<int, int> target_monkes);
+        Monke(int multiplier, int divisible, std::queue<long long> items, Meth meth, std::pair<int, int> target_monkes);
         ~Monke();
-        std::queue<int> items_in_hand;
+        int id;
+        std::queue<long long> items_in_hand;
         int worry_level_multiplier;
         Meth worry_level_multiplier_method;
         int divisible_test;
-        std::tuple<int, int> target_monkes;
+        std::pair<int, int> target_monkes;
         int get_monke_inspection_count() { return monke_inspection_count; }
         void yeet(int item, Monke* monke);
         void yoink(int item, Monke* monke);
-        void inspect(std::vector<Monke> &monke_vector);
+        void inspect(std::vector<Monke> &monke_vector, bool manage_worry_level);
         int monke_inspection_count;
 };
 
-Monke::Monke(int multiplier, int divisible, std::queue<int> items, Meth meth, std::tuple<int, int> target_monkes) {
+Monke::Monke(int multiplier, int divisible, std::queue<long long> items, Meth meth, std::pair<int, int> target_monkes) {
     this->worry_level_multiplier = multiplier;
     this->divisible_test = divisible;
     this->items_in_hand = items;
     this->worry_level_multiplier_method = meth;
     this->monke_inspection_count = 0;
+    this->target_monkes = target_monkes;
 }
 
 Monke::~Monke() 
@@ -50,8 +55,8 @@ Monke::~Monke()
 void Monke::yeet(int item, Monke* monke) 
 {
     // remove item from this monke
-    std::queue<int> items = this->items_in_hand;
-    std::queue<int> new_items;
+    std::queue<long long> items = this->items_in_hand;
+    std::queue<long long> new_items;
     while (!items.empty()) {
         if (items.front() != item) {
             new_items.push(items.front());
@@ -66,8 +71,8 @@ void Monke::yeet(int item, Monke* monke)
 void Monke::yoink(int item, Monke* monke) 
 {
     // remove item from other monke
-    std::queue<int> items = monke->items_in_hand;
-    std::queue<int> new_items;
+    std::queue<long long> items = monke->items_in_hand;
+    std::queue<long long> new_items;
     while (!items.empty()) {
         if (items.front() != item) {
             new_items.push(items.front());
@@ -79,7 +84,7 @@ void Monke::yoink(int item, Monke* monke)
     this->items_in_hand.push(item);
 }
 
-void Monke::inspect(std::vector<Monke> &monke_vector) 
+void Monke::inspect(std::vector<Monke> &monke_vector, bool manage_worry_level = true) 
 {
     // inspect item
     while (!this->items_in_hand.empty()) {
@@ -87,7 +92,6 @@ void Monke::inspect(std::vector<Monke> &monke_vector)
         this->items_in_hand.pop();
         this->monke_inspection_count++;
         
-        std::cout << "monke inspect item w/ worry lvl " << item << std::endl;
 
         if (this->worry_level_multiplier_method == Meth::POTENZ) {
             item = item * item;
@@ -100,15 +104,13 @@ void Monke::inspect(std::vector<Monke> &monke_vector)
         }
 
         // monkey is done with inspection => worry level / 3
-        item = item / 3;
+        manage_worry_level ? item = item / 3 : item = item;
         // test and yeet to correct monke
         if (item % this->divisible_test == 0) {
-            std::cout << "monke yeet item to " << std::get<0>(this->target_monkes) << std::endl;
-            this->yeet(item, &monke_vector[std::get<0>(this->target_monkes)]);
+            this->yeet(item, &monke_vector[this->target_monkes.first]);
         }
         else {
-            std::cout << "monke yeet item to " << std::get<1>(this->target_monkes) << std::endl;
-            this->yeet(item, &monke_vector[std::get<1>(this->target_monkes)]);
+            this->yeet(item, &monke_vector[this->target_monkes.second]);
         }
     }
 }
@@ -116,7 +118,6 @@ void Monke::inspect(std::vector<Monke> &monke_vector)
 
 int main(int argc, char** argv) 
 {
-    std::vector<std::pair<int, int>> bitch_ass_monkes;
     // read input file
     std::ifstream input("input/day11.txt");
     std::stringstream buffer;
@@ -126,7 +127,7 @@ int main(int argc, char** argv)
     // ^Monkey\s(\d):\n\s+Starting items: (\d+(, \d+)*)?\n\s+Operation: new = old\s(\*|\+)\s+(\d+)\n\s+Test: divisible by (\d+)\n\s+If true: throw to monkey\s(\d)\n\s+If false: throw to monkey (\d)$
     std::regex monke_regex ("^Monkey\\s(\\d):\\n\\s+Starting items: (\\d+(, \\d+)*)?\\n\\s+Operation: new = old\\s(\\*|\\+)\\s+(\\w+)\\n\\s+Test: divisible by (\\d+)\\n\\s+If true: throw to monkey\\s(\\d)\\n\\s+If false: throw to monkey (\\d)$");
 
-    part1(lines, bitch_ass_monkes);
+    std::cout << part1(lines) << std::endl;
 
    /*  std::cout << "Day 11: Monkey in the middle" << std::endl;
     std::cout << "======================" << std::endl;
@@ -135,7 +136,7 @@ int main(int argc, char** argv)
 }
 
 
-void part1(std::vector<std::string> lines, std::vector<std::pair<int, int>> bitch_ass_monkes) 
+long long part1(std::vector<std::string> lines) 
 {
     std::regex monke_regex ("^Monkey\\s(\\d):\\n\\s+Starting items: (\\d+(, \\d+)*)?\\n\\s+Operation: new = old\\s(\\*|\\+)\\s+(\\w+)\\n\\s+Test: divisible by (\\d+)\\n\\s+If true: throw to monkey\\s(\\d)\\n\\s+If false: throw to monkey (\\d)$");
     std::vector<Monke> monke_vector;
@@ -144,39 +145,40 @@ void part1(std::vector<std::string> lines, std::vector<std::pair<int, int>> bitc
         std::smatch monke_match;
         std::regex_search(line, monke_match, monke_regex);
 
-        std::cout << "match 7: " << monke_match[7] << std::endl;
-        std::cout << "match 8: " << monke_match[8] << std::endl;
-        std::cout << "match 7 as int: " << std::stoi(monke_match[7]) << std::endl;
-        std::cout << "match 8 as int: " << std::stoi(monke_match[8]) << std::endl;
         int target_monke_1 = std::stoi(monke_match[7]);
         int target_monke_2 = std::stoi(monke_match[8]);
-        std::cout << "target_monke_1: " << target_monke_1 << std::endl;
-        std::cout << "target_monke_2: " << target_monke_2 << std::endl;
-        bitch_ass_monkes.push_back(std::make_pair(
-            target_monke_1, target_monke_2
-        ));
+
+        // show monkey info
+        std::cout << "Monkey #" << monke_match[1] << std::endl;
+        if (monke_match[2] != "") {
+            std::cout << " with items: " << monke_match[2];
+        }
+        std::cout << " with operation: " << monke_match[4] << " " << monke_match[5] << std::endl;
+        std::cout << " with test: " << monke_match[6] << std::endl;
+        std::cout << " with target monke 1: " << monke_match[7] << std::endl;
+        std::cout << " with target monke 2: " << monke_match[8] << std::endl;
 
         // parse into Monke class
-        std::queue<int> items;
+        std::queue<long long> items;
         if (monke_match[2] != "") {
             std::vector<std::string> items_str = split_string(monke_match[2], ", ");
             for (auto item : items_str) {
                 items.push(std::stoi(item));
             }
         }
-        if (monke_match[4] == "*" || monke_match[5] == "old")
+        if (monke_match[5] == "old")
         {
-            Monke monke = Monke(0, std::stoi(monke_match[6]), items, Meth::POTENZ, std::make_tuple(target_monke_1, target_monke_2));
+            Monke monke = Monke(0, std::stoi(monke_match[6]), items, Meth::POTENZ, std::make_pair(target_monke_1, target_monke_2));
             monke_vector.push_back(monke);
         }
         else if (monke_match[4] == "+")
         {
-            Monke monke = Monke(std::stoi(monke_match[5]), std::stoi(monke_match[6]), items, Meth::ADD, std::make_tuple(target_monke_1, target_monke_2));
+            Monke monke = Monke(std::stoi(monke_match[5]), std::stoi(monke_match[6]), items, Meth::ADD, std::make_pair(target_monke_1, target_monke_2));
             monke_vector.push_back(monke);
         }
         else if (monke_match[4] == "*")
         {
-            Monke monke = Monke(std::stoi(monke_match[5]), std::stoi(monke_match[6]), items, Meth::MULTIPLY, std::make_tuple(target_monke_1, target_monke_2));
+            Monke monke = Monke(std::stoi(monke_match[5]), std::stoi(monke_match[6]), items, Meth::MULTIPLY, std::make_pair(target_monke_1, target_monke_2));
             monke_vector.push_back(monke);
         }
         else
@@ -187,23 +189,34 @@ void part1(std::vector<std::string> lines, std::vector<std::pair<int, int>> bitc
     }
 
 
-    // show bitch ass monkes
-    for (int i; i < bitch_ass_monkes.size(); i++) {
-        std::cout << "Monke " << i << " throws to " << std::get<0>(bitch_ass_monkes[i]) << " and " << std::get<1>(bitch_ass_monkes[i]) << std::endl;
 
-    }
 
-/*     for (auto monke : monke_vector) {
+    int i = 0;
+    do  
+    {
+        for (int j = 0; j < monke_vector.size(); j++) 
+        {
+            monke_vector[j].inspect(monke_vector, true);
 
-        monke.inspect(monke_vector);
-    } */
+        }
+        i++;
+    } while ( i < GAME_ROUNDS);
+
+    // last = 61200 | 67077 => wrong :( 
 
     // print monke state
     for (int i = 0; i < monke_vector.size(); i++) {
         std::cout << "Monke " << i << " has " 
-            << monke_vector[i].items_in_hand.size() << " items in hand " 
-            "and inspected " << monke_vector[i].get_monke_inspection_count() << " items" << std::endl; 
+        << monke_vector[i].items_in_hand.size() << " items" 
+        << "and inspected " << monke_vector[i].get_monke_inspection_count() << " items" << std::endl;
     }
+
+    // 2 largest counters
+    std::sort(monke_vector.begin(), monke_vector.end(), [](Monke a, Monke b) { return a.get_monke_inspection_count() > b.get_monke_inspection_count(); });
+    long long largest = monke_vector[0].get_monke_inspection_count();
+    long long second_largest = monke_vector[1].get_monke_inspection_count();
+
+    return largest * second_largest;
 }
 
 

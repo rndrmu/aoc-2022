@@ -1,3 +1,5 @@
 input/*
 a.out
 *.jar
+# because sometimes i am way too fucking retarded for this
+src/helper_*
