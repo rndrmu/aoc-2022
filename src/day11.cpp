@@ -200,7 +200,7 @@ long long part1(std::vector<std::string> lines)
 
         }
         i++;
-    } while ( i < GAME_ROUNDS);
+    } while ( i < 20);
 
     // last = 61200 | 67077 => wrong :( 
 
@@ -209,6 +209,12 @@ long long part1(std::vector<std::string> lines)
         std::cout << "Monke " << i << " has " 
         << monke_vector[i].items_in_hand.size() << " items" 
         << "and inspected " << monke_vector[i].get_monke_inspection_count() << " items" << std::endl;
+        std::cout << "Monke #" << i << " has the following items: ";
+        while (!monke_vector[i].items_in_hand.empty()) {
+            std::cout << monke_vector[i].items_in_hand.front() << " ";
+            monke_vector[i].items_in_hand.pop();
+        }
+        std::cout << std::endl;
     }
 
     // 2 largest counters
